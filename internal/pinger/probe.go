@@ -41,19 +41,33 @@ func pingOnce(address string, timeout time.Duration) (latency time.Duration, err
 		}
 	}
 
-	// 2. Conexión TCP estándar
+	// 2. Conexión TCP estándar con timeout estricto
 	target := resolveAddress(address)
 	start := time.Now()
 
-	conn, err := net.DialTimeout("tcp", target, timeout)
-	latency = time.Since(start)
-
-	if err != nil {
-		return latency, fmt.Errorf("conexión TCP fallida a '%s': %w", target, err)
+	type dialRes struct {
+		conn net.Conn
+		err  error
 	}
-	defer conn.Close()
+	resCh := make(chan dialRes, 1)
 
-	return latency, nil
+	go func() {
+		conn, err := net.DialTimeout("tcp", target, timeout)
+		resCh <- dialRes{conn, err}
+	}()
+
+	select {
+	case res := <-resCh:
+		latency = time.Since(start)
+		if res.err != nil {
+			return latency, fmt.Errorf("conexión TCP fallida a '%s': %w", target, res.err)
+		}
+		res.conn.Close()
+		return latency, nil
+	case <-time.After(timeout):
+		// El OS se quedó bloqueado, pero Go retorna inmediatamente
+		return timeout, fmt.Errorf("timeout estricto de %v excedido conectando a '%s'", timeout, target)
+	}
 }
 
 // probeARP envía un paquete ARP mediante la API nativa de Windows (SendARP).
