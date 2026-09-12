@@ -1,4 +1,4 @@
-﻿# ⚡ NetPulse
+# ⚡ NetPulse
 
 <div align="center">
 
@@ -19,14 +19,17 @@
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════╗
-║   NetPulse  │  12/09/2026 18:30:00  │  ciclo en 1.87s                   ║
+║   NetPulse  │  12/09/2026 18:47:01  │  ciclo en 0.04s                   ║
 ╠══════════════════════════════════════════════════════════════════════════╣
 ║  TARGET                ║  DIRECCIÓN       ║  ESTADO      ║  LATENCIA    ║
 ╠══════════════════════════════════════════════════════════════════════════╣
-║  Google DNS (HTTPS)    ║  8.8.8.8:443     ║  🟢 UP       ║  14ms        ║
-║  Cloudflare DNS (HTTPS)║  1.1.1.1:443     ║  🟢 UP       ║  12ms        ║
-║  OpenDNS (HTTPS)       ║  208.67.222.222  ║  🟢 UP       ║  31ms        ║
-║  Router Local          ║  192.168.1.1:80  ║  🔴 DOWN     ║  —           ║
+║  Esta Computadora (PC) ║  192.168.110.74  ║  🟢 UP       ║  0ms         ║
+║  Router Local          ║  192.168.110.1:80║  🟢 UP       ║  6ms         ║
+║  55TCLRokuTV.lan       ║  192.168.110.30  ║  🟢 UP       ║  8ms         ║
+║  POCO-X5-5G.lan        ║  192.168.110.77  ║  🟢 UP       ║  8ms         ║
+║  Cloudflare DNS (HTTPS)║  1.1.1.1:443     ║  🟢 UP       ║  40ms        ║
+║  Google DNS (HTTPS)    ║  8.8.8.8:443     ║  🟢 UP       ║  44ms        ║
+║  OpenDNS (HTTPS)       ║  208.67.222.222  ║  🟢 UP       ║  44ms        ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 ```
 
@@ -85,7 +88,9 @@ select {
 
 | Feature | Detalle |
 |---|---|
+| 📡 **Auto-Discovery de Red** | Escaneo automático de la subred local con 254 sondas concurrentes ARP/TCP. Detecta PCs, consolas, móviles y TVs. |
 | ⚡ **Concurrencia idiomática** | Goroutines + channels bufferizados. N targets = N goroutines paralelas. |
+| 🎯 **Sonda Dual (Capa 2 + 4)** | ARP de ultra-baja latencia para LAN (detecta dispositivos con firewall) + TCP para WAN. |
 | 🛡️ **Sin tormentas de alertas** | Máquina de estados por target. Solo notifica en transiciones `UP→DOWN` y `DOWN→UP`. |
 | 🔌 **Extensible por diseño** | Interfaz `Sender` — agrega Slack, PagerDuty o email sin tocar el core. |
 | 📱 **Telegram nativo** | Bot API con MarkdownV2, emojis y detalle de latencia en recuperaciones. |
@@ -111,7 +116,18 @@ cd netpulse
 go build -o netpulse ./cmd/netpulse
 ```
 
-### Uso básico (solo consola)
+### Auto-descubrir y monitorear toda tu red local (¡Sin configurar nada!)
+
+```bash
+./netpulse -scan
+```
+
+> Agrega `-save` para guardar automáticamente los equipos descubiertos en tu `targets.json`:
+> ```bash
+> ./netpulse -scan -save
+> ```
+
+### Uso básico con archivo de configuración
 
 ```bash
 ./netpulse -config targets.json
@@ -138,6 +154,8 @@ go build -o netpulse ./cmd/netpulse
 
 | Flag | Descripción | Default |
 |---|---|---|
+| `-scan` | Escanear automáticamente la red local descubriendo hosts vivos | `false` |
+| `-save` | Guardar los hosts descubiertos con `-scan` en el archivo JSON | `false` |
 | `-config` | Ruta al archivo JSON de targets | `targets.json` |
 | `-telegram-token` | Token del bot de Telegram | *(vacío)* |
 | `-telegram-chat` | Chat ID de Telegram destino | *(vacío)* |
@@ -251,11 +269,13 @@ netpulse/
 │   └── netpulse/
 │       └── main.go          # Punto de entrada: flags, ticker, render de tabla
 ├── config/
-│   └── config.go            # Carga y validación de targets.json
+│   └── config.go            # Carga, validación y persistencia de targets.json
 ├── internal/
+│   ├── discovery/
+│   │   └── discovery.go     # Auto-descubrimiento LAN: Win32 SendARP + DNS reverso + OUI
 │   ├── pinger/
 │   │   ├── engine.go        # Motor concurrente: goroutines + WaitGroup + channel
-│   │   ├── probe.go         # Sonda TCP individual (1 intento)
+│   │   ├── probe.go         # Sonda dual Capa 2 (ARP) y Capa 4 (TCP)
 │   │   └── result.go        # Tipos: PingResult, Status
 │   └── notifier/
 │       └── notifier.go      # Detección de transiciones + TelegramSender + WebhookSender

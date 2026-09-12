@@ -74,3 +74,15 @@ func Load(filePath string) (*Config, error) {
 	// y permite que el caller detecte nil (aunque aquí nunca retornamos nil sin error).
 	return &cfg, nil
 }
+
+// Save serializa y escribe la configuración actual al archivo especificado con formato indentado.
+func (c *Config) Save(filePath string) error {
+	data, err := json.MarshalIndent(c, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error serializando configuración: %w", err)
+	}
+	if err := os.WriteFile(filePath, data, 0644); err != nil {
+		return fmt.Errorf("error guardando configuración en '%s': %w", filePath, err)
+	}
+	return nil
+}
