@@ -49,7 +49,12 @@ func New(cfg *config.Config) *Engine {
 // El channel es más idiomático en Go: "No comuniques compartiendo memoria;
 // comparte memoria comunicándote." — Rob Pike, creador de Go.
 func (e *Engine) Run() []PingResult {
+	e.cfg.TargetsMu.RLock()
 	targetCount := len(e.cfg.Targets)
+	targetsCopy := make([]config.Target, targetCount)
+	copy(targetsCopy, e.cfg.Targets)
+	e.cfg.TargetsMu.RUnlock()
+
 	timeout := time.Duration(e.cfg.Settings.TimeoutSeconds) * time.Second
 
 	// =========================================================================
@@ -88,7 +93,7 @@ func (e *Engine) Run() []PingResult {
 	// =========================================================================
 	// PASO 3: Lanzar N goroutines worker (una por target)
 	// =========================================================================
-	for _, target := range e.cfg.Targets {
+	for _, target := range targetsCopy {
 		wg.Add(1) // Incrementamos ANTES de `go`
 
 		// Captura de variable en loop: asignamos a variable local `t`.
@@ -200,7 +205,7 @@ func (e *Engine) pingTarget(target config.Target, timeout time.Duration) PingRes
 		// Si no es el último intento, esperamos un momento antes de reintentar.
 		// Evitar bombardear un host caído con reintentos inmediatos.
 		if attempt < maxRetries {
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
 

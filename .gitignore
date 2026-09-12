@@ -1,4 +1,7 @@
-﻿netpulse.exe
-netpulse
+/netpulse.exe
+/netpulse
 *.log
 *.exe
+node_modules/
+dist/
+.env.local

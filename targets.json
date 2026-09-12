@@ -15,11 +15,31 @@
     {
       "name": "OpenDNS (HTTPS)",
       "address": "208.67.222.222:443"
+    },
+    {
+      "name": "55TCLRokuTV.lan",
+      "address": "192.168.110.30"
+    },
+    {
+      "name": "Esta Computadora (PC)",
+      "address": "192.168.110.74"
+    },
+    {
+      "name": "POCO-X5-5G.lan",
+      "address": "192.168.110.77"
+    },
+    {
+      "name": "Dispositivo (192.168.110.117)",
+      "address": "192.168.110.117"
+    },
+    {
+      "name": "Eduardo-PC.lan",
+      "address": "192.168.110.187"
     }
   ],
   "settings": {
-    "interval_seconds": 30,
-    "timeout_seconds": 5,
-    "max_retries": 3
+    "interval_seconds": 3,
+    "timeout_seconds": 1,
+    "max_retries": 2
   }
 }

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sync"
 )
 
 // Target representa un host individual que NetPulse va a monitorear.
@@ -25,6 +26,7 @@ type Settings struct {
 // Config es la estructura raíz que representa el archivo targets.json completo.
 // Actúa como el contrato de datos entre el archivo JSON y el código Go.
 type Config struct {
+	TargetsMu sync.RWMutex `json:"-"`
 	Targets  []Target `json:"targets"`  // Slice (lista) de hosts a monitorear
 	Settings Settings `json:"settings"` // Configuración global del motor
 }
