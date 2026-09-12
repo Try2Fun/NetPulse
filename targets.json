@@ -38,7 +38,7 @@
     }
   ],
   "settings": {
-    "interval_seconds": 3,
+    "interval_seconds": 1,
     "timeout_seconds": 1,
     "max_retries": 2
   }
