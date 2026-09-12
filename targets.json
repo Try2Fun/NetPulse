@@ -1,0 +1,25 @@
+{
+  "targets": [
+    {
+      "name": "Router Local",
+      "address": "192.168.1.1:80"
+    },
+    {
+      "name": "Google DNS (HTTPS)",
+      "address": "8.8.8.8:443"
+    },
+    {
+      "name": "Cloudflare DNS (HTTPS)",
+      "address": "1.1.1.1:443"
+    },
+    {
+      "name": "OpenDNS (HTTPS)",
+      "address": "208.67.222.222:443"
+    }
+  ],
+  "settings": {
+    "interval_seconds": 30,
+    "timeout_seconds": 5,
+    "max_retries": 3
+  }
+}
