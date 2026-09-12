@@ -2,7 +2,7 @@
   "targets": [
     {
       "name": "Router Local",
-      "address": "192.168.1.1:80"
+      "address": "192.168.110.1:80"
     },
     {
       "name": "Google DNS (HTTPS)",
