@@ -39,6 +39,14 @@
     {
       "name": "A13-de-Mildred.lan",
       "address": "192.168.110.147"
+    },
+    {
+      "name": "Galaxy-A14.lan",
+      "address": "192.168.110.125"
+    },
+    {
+      "name": "Galaxy-A14.lan",
+      "address": "192.168.110.194"
     }
   ],
   "settings": {

@@ -14,6 +14,12 @@
 
 > **"Un motor concurrente que descubre intrusos y diagnostica la salud de tu red en fracción de segundos, con una interfaz visual de clase mundial."**
 
+<br/>
+
+<p align="center">
+  <img src="./docs/img/netpulse_dashboard_overview.png" alt="NetPulse Live Dashboard Overview" width="92%" style="border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.4);" />
+</p>
+
 [📖 ¿Para qué sirve?](#-para-qué-sirve-y-qué-problema-resuelve) • [⚙️ ¿Cómo funciona?](#-cómo-funciona-la-cadena-de-telemetría) • [🏢 Impacto del Sistema](#-por-qué-esto-destaca-a-nivel-profesional) • [🚀 Inicio Rápido](#-inicio-rápido) • [📊 Dashboard Web](#-dashboard-premium-react)
 
 ---
@@ -80,13 +86,28 @@ Si un reclutador o líder técnico evalúa la arquitectura de este proyecto, enc
 
 ## 📊 Dashboard Premium (React)
 
-![NetPulse Dashboard](./cmd/netpulse/dashboard/public/hero.png)
+El frontend no es un simple panel de control, es una experiencia de centro de operaciones (*NOC / Cyber-Ops*) con diseño Glassmorphism y telemetría fluida:
 
-El frontend no es un simple panel de control, es una experiencia visual:
-- **Dark Mode Avanzado:** Interfaz limpia con tonos translúcidos (Glassmorphism).
-- **Animaciones Fluidas:** *Framer Motion* se encarga de suavizar las transiciones de conexión y desconexión.
-- **Particle Canvas:** Fondo dinámico que simula los nodos de una red interconectada.
-- **Sparklines Integradas:** Gráficas de comportamiento que se dibujan matemáticamente en SVG directamente en el cliente.
+#### 🟢 Vista General & Telemetría en Vivo
+> Panel principal mostrando el pulso de la red en tiempo real, sparklines vectoriales SVG por dispositivo, métricas de uptime y latencias calculadas en milisegundos.
+
+<p align="center">
+  <img src="./docs/img/netpulse_dashboard_overview.png" alt="NetPulse Overview Dashboard" width="95%" style="border-radius: 8px; border: 1px solid #1e293b; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" />
+</p>
+
+#### 🔴 Diagnóstico Inmediato de Nodos Caídos
+> Filtro inteligente de incidentes: aísla y resalta al instante equipos inaccesibles (DOWN / Timeout) con alerta visual inmediata para una rápida respuesta.
+
+<p align="center">
+  <img src="./docs/img/netpulse_dashboard_alerts.png" alt="NetPulse Alerts Dashboard" width="95%" style="border-radius: 8px; border: 1px solid #1e293b; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" />
+</p>
+
+### ✨ Aspectos Destacados del Frontend:
+- **Dark Mode Avanzado:** Interfaz limpia con tonos oscuros profundos y estética cian/esmeralda.
+- **Animaciones Fluidas:** *Framer Motion* gestiona las micro-animaciones al entrar nuevos nodos y variar la latencia.
+- **Particle Canvas:** Lienzo dinámico interactivo de fondo que simula los nodos de una red de computadoras.
+- **Sparklines Integradas:** Gráficas de comportamiento continuo renderizadas puramente en SVG sin librerías pesadas.
+- **Filtros Rápidos:** Segmentación instantánea por estado (*Todos*, *En línea* o *Caídos*).
 
 ---
 
@@ -129,15 +150,17 @@ netpulse/
 ├── cmd/
 │   └── netpulse/
 │       ├── dashboard/      # Código fuente React (Vite, Tailwind, TypeScript)
-│       ├── web/            # Compilado de producción de React
+│       ├── web/            # Compilado de producción de React incrustado
 │       └── main.go         # Punto de entrada de Go (Embed, Web Server, CLI)
-├── config/                 # Carga segura y Mutex para targets.json
+├── config/                 # Carga concurrente y RWMutex para targets.json
+├── docs/
+│   └── img/                # Capturas de pantalla reales en alta resolución
 ├── internal/
-│   ├── discovery/          # Escáner ARP y detección de nuevos dispositivos
-│   ├── hub/                # Manejador de conexiones WebSocket y clientes
+│   ├── discovery/          # Escáner ARP y detección autónoma de hosts
+│   ├── hub/                # Manejador WebSocket concurrente para clientes
 │   ├── notifier/           # Alertas (Telegram, Webhooks)
 │   ├── pinger/             # Motor de telemetría (Engine, Probe, Result)
-│   └── server/             # Servidor HTTP y sincronización de estado inicial
+│   └── server/             # Servidor HTTP y sincronización de estado
 ├── targets.json            # Base de datos en vivo de los equipos
 └── Iniciar_NetPulse.bat    # Lanzador "One-Click"
 ```
