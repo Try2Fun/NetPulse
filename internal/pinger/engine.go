@@ -55,7 +55,12 @@ func (e *Engine) Run() []PingResult {
 	copy(targetsCopy, e.cfg.Targets)
 	e.cfg.TargetsMu.RUnlock()
 
-	timeout := time.Duration(e.cfg.Settings.TimeoutSeconds) * time.Second
+	var timeout time.Duration
+	if e.cfg.Settings.TimeoutMs > 0 {
+		timeout = time.Duration(e.cfg.Settings.TimeoutMs) * time.Millisecond
+	} else {
+		timeout = time.Duration(e.cfg.Settings.TimeoutSeconds) * time.Second
+	}
 
 	// =========================================================================
 	// PASO 1: Crear el channel con buffer
@@ -202,11 +207,8 @@ func (e *Engine) pingTarget(target config.Target, timeout time.Duration) PingRes
 		lastErr = err
 		log.Printf("[INTENTO %d/%d] %s (%s): %v", attempt, maxRetries, target.Name, target.Address, err)
 
-		// Si no es el último intento, esperamos un momento antes de reintentar.
-		// Evitar bombardear un host caído con reintentos inmediatos.
-		if attempt < maxRetries {
-			time.Sleep(100 * time.Millisecond)
-		}
+		// Quitamos el sleep completamente para tener latencia CERO entre intentos.
+		// Queremos detectar caídas en milisegundos absolutos.
 	}
 
 	// Todos los intentos fallaron. Determinamos si fue timeout u otro error.

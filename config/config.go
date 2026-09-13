@@ -16,10 +16,10 @@ type Target struct {
 	Address string `json:"address"` // IP o hostname, ej: "192.168.1.1"
 }
 
-// Settings contiene la configuración de comportamiento global del motor.
 type Settings struct {
 	IntervalSeconds int `json:"interval_seconds"` // Cada cuántos segundos hacer ping
-	TimeoutSeconds  int `json:"timeout_seconds"`  // Tiempo máximo de espera por respuesta
+	TimeoutSeconds  int `json:"timeout_seconds,omitempty"`  // (Legacy) Tiempo máximo de espera
+	TimeoutMs       int `json:"timeout_ms,omitempty"`       // Tiempo máximo en milisegundos
 	MaxRetries      int `json:"max_retries"`      // Intentos antes de disparar alerta
 }
 
