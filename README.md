@@ -1,307 +1,51 @@
-# ⚡ NetPulse
+# 🌐 NetPulse - Telemetría de Red en Tiempo Real
 
-<div align="center">
+![NetPulse Dashboard](./cmd/netpulse/dashboard/public/hero.png)
 
-![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=for-the-badge&logo=go&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Active-6366f1?style=for-the-badge)
-![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-f59e0b?style=for-the-badge)
+NetPulse es un motor de monitoreo de red ultra rápido escrito en **Go**, que integra un hermoso dashboard web reactivo construido con **React y Framer Motion**. Diseñado para descubrir dispositivos en tu red local (LAN) automáticamente, evaluar su latencia en milisegundos y presentarlo en un panel premium incrustado dentro de un único archivo ejecutable (`.exe`).
 
-**Motor de telemetría de red en tiempo real — concurrente, reactivo y listo para producción.**
+## ✨ Características Principales
 
-*Monitorea hosts, detecta caídas y despacha alertas sin saturar tu CPU.*
+*   **⚡ Motor Concurrente (Go):** Arquitectura robusta utilizando `Goroutines`, `Channels` con buffer, y `sync.WaitGroup`. Capaz de monitorear cientos de dispositivos simultáneamente sin cuellos de botella.
+*   **🔍 Auto-Descubrimiento en Vivo (ARP Sweep):** Utiliza la API nativa de Windows (`SendARP`) a nivel de Capa 2 para descubrir dispositivos ocultos o con firewall cerrado (PlayStation, Smart TVs, teléfonos). Escanea la red de fondo cada 60 segundos buscando equipos nuevos.
+*   **📡 Telemetría TCP Estricta:** Implementa timeouts controlados a nivel de Go usando `select` y canales para evitar bloqueos del Kernel de Windows. Configurable hasta la precisión de milisegundos (`200ms`).
+*   **🎨 Dashboard Premium (React + Tailwind v4):** 
+    *   Interfaz con estilo Glassmorphism, animaciones impulsadas por Framer Motion.
+    *   Sparklines SVG (gráficas de latencia en vivo).
+    *   Fondo animado (Particle Canvas) basado en nodos conectados.
+*   **🚀 Cero Dependencias Externas:** El build completo de React se comprime e incrusta directamente dentro de `netpulse.exe` utilizando `go:embed`. No requieres Node.js ni Apache/Nginx para ejecutarlo.
+*   **📱 Notificaciones (Opcional):** Integración nativa para disparar alertas a Telegram o Webhooks cuando un equipo se cae.
 
-</div>
+## ⚙️ Arquitectura del Sistema
 
----
+El proyecto está diseñado bajo un modelo de concurrencia comunicante, siguiendo el proverbio: *"No comuniques compartiendo memoria; comparte memoria comunicándote."*
 
-## 🖥️ Demo en vivo
+1.  **Engine (`internal/pinger`):** Lee `targets.json` de forma segura (con `sync.RWMutex`), lanza una Goroutine por cada IP, ejecuta el ping (ARP o TCP), recolecta los resultados a través de canales y retorna el reporte del ciclo completo.
+2.  **Discovery (`internal/discovery`):** Funciona como una sub-rutina de fondo. Escanea la subred `/24` utilizando semáforos (límite de 64 hilos) para no saturar la tarjeta de red. Los dispositivos nuevos se escriben automáticamente al archivo JSON.
+3.  **Hub & Server (`internal/hub` y `internal/server`):** Levantan un servidor HTTP y actualizan de `http` a `ws` (WebSockets). Cada vez que el Engine termina un ciclo (cada 1 segundo por defecto), el servidor inyecta el JSON del ciclo al Hub, el cual lo reparte de forma concurrente a todos los clientes web conectados.
+4.  **Frontend (`cmd/netpulse/dashboard`):** Un cliente TypeScript estricto que escucha el WebSocket (`useNetPulse.ts`). Almacena los últimos 20 puntos de latencia en un historial local para dibujar gráficas fluidas sin sobrecargar el servidor Go.
 
+## 🚀 Cómo Ejecutar
+
+Para uso normal con descubrimiento automático y panel web activo:
+
+```powershell
+.\Iniciar_NetPulse.bat
 ```
-╔══════════════════════════════════════════════════════════════════════════╗
-║   NetPulse  │  12/09/2026 18:47:01  │  ciclo en 0.04s                   ║
-╠══════════════════════════════════════════════════════════════════════════╣
-║  TARGET                ║  DIRECCIÓN       ║  ESTADO      ║  LATENCIA    ║
-╠══════════════════════════════════════════════════════════════════════════╣
-║  Esta Computadora (PC) ║  192.168.110.74  ║  🟢 UP       ║  0ms         ║
-║  Router Local          ║  192.168.110.1:80║  🟢 UP       ║  6ms         ║
-║  55TCLRokuTV.lan       ║  192.168.110.30  ║  🟢 UP       ║  8ms         ║
-║  POCO-X5-5G.lan        ║  192.168.110.77  ║  🟢 UP       ║  8ms         ║
-║  Cloudflare DNS (HTTPS)║  1.1.1.1:443     ║  🟢 UP       ║  40ms        ║
-║  Google DNS (HTTPS)    ║  8.8.8.8:443     ║  🟢 UP       ║  44ms        ║
-║  OpenDNS (HTTPS)       ║  208.67.222.222  ║  🟢 UP       ║  44ms        ║
-╚══════════════════════════════════════════════════════════════════════════╝
-```
+*(O internamente: `go run ./cmd/netpulse -scan -save -web`)*
 
----
+Luego, abre tu navegador en: [http://localhost:8080](http://localhost:8080)
 
-## 🏗️ Arquitectura
+## 🛠️ Configuración Extrema (`targets.json`)
 
-NetPulse sigue una arquitectura de **pipeline concurrente** inspirada en los principios de diseño de Go: *"No comuniques compartiendo memoria; comparte memoria comunicándote."*
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         NetPulse Engine                             │
-│                                                                     │
-│  main()                                                             │
-│   ├─ config.Load()         → carga targets.json                     │
-│   ├─ pinger.New(cfg)       → construye el motor concurrente         │
-│   ├─ notifier.New(senders) → construye el despachador de alertas    │
-│   └─ Loop [time.Ticker]                                             │
-│        │                                                            │
-│        ▼                                                            │
-│  Engine.Run()                                                       │
-│   ├─ goroutine #1 ──► pingTarget(host1) ──► channel ──┐            │
-│   ├─ goroutine #2 ──► pingTarget(host2) ──► channel ──┤            │
-│   └─ goroutine #N ──► pingTarget(hostN) ──► channel ──┘            │
-│                                                  │                  │
-│                                    sync.WaitGroup + close(ch)       │
-│                                                  │                  │
-│                                    []PingResult  ▼                  │
-│  Notifier.Process(results)                                          │
-│   ├─ Detecta transiciones UP↔DOWN (sin spam de alertas)            │
-│   ├─ TelegramSender.Send(alert)  → Bot API de Telegram             │
-│   └─ WebhookSender.Send(alert)   → n8n / Zapier / REST endpoint    │
-│                                                                     │
-│  renderTable(results)            → stdout con tabla Unicode         │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### Señales del OS — Graceful Shutdown
-
-```
-Ctrl+C / SIGTERM
-      │
-      ▼
-signal.NotifyContext(ctx)
-      │
-      ▼
-select {
-  case <-ticker.C:   → ejecuta ciclo de monitoreo
-  case <-ctx.Done(): → salida limpia, libera recursos
-}
-```
-
----
-
-## ✨ Features
-
-| Feature | Detalle |
-|---|---|
-| 📡 **Auto-Discovery de Red** | Escaneo automático de la subred local con 254 sondas concurrentes ARP/TCP. Detecta PCs, consolas, móviles y TVs. |
-| ⚡ **Concurrencia idiomática** | Goroutines + channels bufferizados. N targets = N goroutines paralelas. |
-| 🎯 **Sonda Dual (Capa 2 + 4)** | ARP de ultra-baja latencia para LAN (detecta dispositivos con firewall) + TCP para WAN. |
-| 🛡️ **Sin tormentas de alertas** | Máquina de estados por target. Solo notifica en transiciones `UP→DOWN` y `DOWN→UP`. |
-| 🔌 **Extensible por diseño** | Interfaz `Sender` — agrega Slack, PagerDuty o email sin tocar el core. |
-| 📱 **Telegram nativo** | Bot API con MarkdownV2, emojis y detalle de latencia en recuperaciones. |
-| 🔗 **Webhooks genéricos** | Compatible con n8n, Zapier, Make, Discord, Slack Incoming Webhooks. |
-| ⏱️ **Tick preciso** | `time.NewTicker` garantiza intervalos fijos independientemente de cuánto tarde el ciclo. |
-| 🧹 **Graceful shutdown** | `signal.NotifyContext` captura `SIGINT`/`SIGTERM` — nunca un `kill -9`. |
-| 🔄 **Reintentos inteligentes** | `MaxRetries` con backoff de 500ms entre intentos antes de marcar DOWN. |
-| 🔍 **Timeout vs DOWN** | Diferencia entre `TIMEOUT` (red lenta) y `DOWN` (host inalcanzable). |
-
----
-
-## 🚀 Inicio Rápido
-
-### Prerequisitos
-
-- **Go 1.22+** — [descargar](https://go.dev/dl/)
-
-### Instalación
-
-```bash
-git clone https://github.com/Try2Fun/netpulse.git
-cd netpulse
-go build -o netpulse ./cmd/netpulse
-```
-
-### Auto-descubrir y monitorear toda tu red local (¡Sin configurar nada!)
-
-```bash
-./netpulse -scan
-```
-
-> Agrega `-save` para guardar automáticamente los equipos descubiertos en tu `targets.json`:
-> ```bash
-> ./netpulse -scan -save
-> ```
-
-### Uso básico con archivo de configuración
-
-```bash
-./netpulse -config targets.json
-```
-
-### Con notificaciones a Telegram
-
-```bash
-./netpulse \
-  -config targets.json \
-  -telegram-token "123456:ABC-DEFxyz" \
-  -telegram-chat "-1001234567890"
-```
-
-### Con webhook HTTP (n8n, Zapier, Make…)
-
-```bash
-./netpulse \
-  -config targets.json \
-  -webhook-url "https://n8n.tuservidor.com/webhook/abc123"
-```
-
-### Todos los flags
-
-| Flag | Descripción | Default |
-|---|---|---|
-| `-scan` | Escanear automáticamente la red local descubriendo hosts vivos | `false` |
-| `-save` | Guardar los hosts descubiertos con `-scan` en el archivo JSON | `false` |
-| `-config` | Ruta al archivo JSON de targets | `targets.json` |
-| `-telegram-token` | Token del bot de Telegram | *(vacío)* |
-| `-telegram-chat` | Chat ID de Telegram destino | *(vacío)* |
-| `-webhook-url` | URL de webhook HTTP para alertas | *(vacío)* |
-
----
-
-## ⚙️ Configuración (`targets.json`)
+El archivo de configuración define los objetivos a monitorear y la agresividad del escaneo. 
+Ejemplo de configuración para velocidad en tiempo real:
 
 ```json
-{
-  "targets": [
-    { "name": "Google DNS (HTTPS)",     "address": "8.8.8.8:443"        },
-    { "name": "Cloudflare DNS (HTTPS)", "address": "1.1.1.1:443"        },
-    { "name": "OpenDNS (HTTPS)",        "address": "208.67.222.222:443" },
-    { "name": "Router Local",           "address": "192.168.1.1:80"     }
-  ],
   "settings": {
-    "interval_seconds": 30,
-    "timeout_seconds":  5,
-    "max_retries":      3
+    "interval_seconds": 1, 
+    "timeout_ms": 200,     
+    "max_retries": 1       
   }
-}
 ```
-
-> **Tip**: El campo `address` soporta `host:port` o solo `host` (asume `:443` por defecto).
-> Usa `:443` (HTTPS) para servidores DNS públicos, `:80` para routers con interfaz web.
-
----
-
-## 🏢 Enterprise Value
-
-### Por qué NetPulse en entornos reales
-
-| Escenario | Solución NetPulse |
-|---|---|
-| **Redundancia de ISP** | Monitorea tu enlace primario y el de backup — alerta en segundos si uno cae. |
-| **SLA de proveedores** | Logs timestamped de latencia para disputar cortes con el proveedor. |
-| **NOC sin agentes** | Binario estático compilado — corre sin Docker, sin dependencias externas. |
-| **Integración DevOps** | Webhook a n8n/Zapier dispara runbooks automáticos al detectar caídas. |
-| **Eficiencia de CPU** | `time.Ticker` + goroutines: N targets en paralelo en milisegundos, duerme el resto del intervalo. |
-
-### Payload webhook (integración REST)
-
-```json
-{
-  "event":       "alert",
-  "target_name": "Router Local",
-  "address":     "192.168.1.1:80",
-  "old_status":  "UP",
-  "new_status":  "DOWN",
-  "latency_ms":  0,
-  "timestamp":   "2026-09-12T22:30:00Z"
-}
-```
-
----
-
-## 🧠 Decisiones de Diseño
-
-### ¿Por qué channels y no mutex?
-
-```go
-// ❌ Con mutex — propenso a olvidar Lock/Unlock, difícil de razonar
-var mu sync.Mutex
-var all []PingResult
-go func() {
-    mu.Lock()
-    all = append(all, result)
-    mu.Unlock()
-}()
-
-// ✅ Con channel — idiomático, seguro, el tipo garantiza la sincronización
-results := make(chan PingResult, targetCount)
-go func(tgt Target) {
-    defer wg.Done()
-    results <- pingTarget(tgt, timeout)
-}(target)
-```
-
-### ¿Por qué Ticker y no Sleep?
-
-```
-time.Sleep(30s)     → duerme 30s DESPUÉS de que el ciclo terminó.
-                      Si el ciclo tardó 8s → próximo ciclo a los 38s.
-
-time.NewTicker(30s) → dispara CADA 30s desde la creación.
-                      Intervalo constante sin importar cuánto tarde el ciclo.
-```
-
-### Máquina de estados del Notifier
-
-```
-Estado previo  │  Estado actual  │  ¿Alerta?
-───────────────┼─────────────────┼──────────────────────────────
-(sin estado)   │  UP             │  No  (inicio limpio)
-(sin estado)   │  DOWN/TIMEOUT   │  Sí  (caída detectada)
-UP             │  UP             │  No  (sin cambio)
-UP             │  DOWN/TIMEOUT   │  Sí  (nueva caída)    🔴
-DOWN/TIMEOUT   │  UP             │  Sí  (recuperación)   🟢
-DOWN/TIMEOUT   │  DOWN/TIMEOUT   │  No  (ya notificado)
-```
-
----
-
-## 📁 Estructura del Proyecto
-
-```
-netpulse/
-├── cmd/
-│   └── netpulse/
-│       └── main.go          # Punto de entrada: flags, ticker, render de tabla
-├── config/
-│   └── config.go            # Carga, validación y persistencia de targets.json
-├── internal/
-│   ├── discovery/
-│   │   └── discovery.go     # Auto-descubrimiento LAN: Win32 SendARP + DNS reverso + OUI
-│   ├── pinger/
-│   │   ├── engine.go        # Motor concurrente: goroutines + WaitGroup + channel
-│   │   ├── probe.go         # Sonda dual Capa 2 (ARP) y Capa 4 (TCP)
-│   │   └── result.go        # Tipos: PingResult, Status
-│   └── notifier/
-│       └── notifier.go      # Detección de transiciones + TelegramSender + WebhookSender
-├── targets.json             # Configuración de hosts a monitorear
-├── go.mod
-└── README.md
-```
-
----
-
-## 🔭 Roadmap
-
-- [ ] Sonda ICMP (raw ping) vía `golang.org/x/net/icmp`
-- [ ] Exportación de métricas en formato Prometheus
-- [ ] Dashboard web en tiempo real (WebSockets)
-- [ ] Alertas a Slack, Discord y PagerDuty
-- [ ] Persistencia de historial en SQLite
-
----
-
-## 📄 Licencia
-
-MIT © 2026 — [Try2Fun](https://github.com/Try2Fun)
-
----
-
-<div align="center">
-Hecho con ❤️ y Go — <em>concurrent by design, reactive by nature</em>
-</div>
+*Esto significa: Escanea a todos cada 1 segundo. Si alguien tarda más de 200ms en responder en un solo intento, márcalo como CAÍDO inmediatamente.*

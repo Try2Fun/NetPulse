@@ -35,11 +35,15 @@
     {
       "name": "Eduardo-PC.lan",
       "address": "192.168.110.187"
+    },
+    {
+      "name": "A13-de-Mildred.lan",
+      "address": "192.168.110.147"
     }
   ],
   "settings": {
     "interval_seconds": 1,
-    "timeout_ms": 200,
-    "max_retries": 1
+    "timeout_seconds": 1,
+    "max_retries": 2
   }
 }
