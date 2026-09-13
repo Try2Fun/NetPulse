@@ -20,7 +20,7 @@
   <img src="./docs/img/netpulse_dashboard_overview.png" alt="NetPulse Live Dashboard Overview" width="92%" style="border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.4);" />
 </p>
 
-[📖 ¿Para qué sirve?](#-para-qué-sirve-y-qué-problema-resuelve) • [⚙️ ¿Cómo funciona?](#-cómo-funciona-la-cadena-de-telemetría) • [🏢 Impacto del Sistema](#-por-qué-esto-destaca-a-nivel-profesional) • [🚀 Inicio Rápido](#-inicio-rápido) • [📊 Dashboard Web](#-dashboard-premium-react)
+[📖 ¿Para qué sirve?](#-para-qué-sirve-y-qué-problema-resuelve) • [⚙️ ¿Cómo funciona?](#-cómo-funciona-la-cadena-de-telemetría) • [🏢 Impacto Empresarial](#-impacto-empresarial-y-casos-de-uso) • [🚀 Inicio Rápido](#-inicio-rápido) • [📊 Dashboard Web](#-dashboard-premium-react)
 
 ---
 
@@ -73,14 +73,24 @@ En la gestión moderna de redes, saber qué equipos están conectados y si está
 
 ---
 
-## 🏢 ¿Por qué esto destaca a nivel profesional?
+## 🏢 Impacto Empresarial y Casos de Uso
 
-Si un reclutador o líder técnico evalúa la arquitectura de este proyecto, encontrará estándares de la industria:
+En entornos corporativos y de producción, la invisibilidad de la red y las caídas no detectadas representan pérdidas económicas directas y brechas de seguridad. **NetPulse** aporta valor tangible a las organizaciones:
 
-* **⚡ Concurrencia Pura en Go:** Utiliza el modelo CSP (*Communicating Sequential Processes*) con `sync.WaitGroup` y `Channels` bufferizados. Nada de bucles lentos; todo ocurre en paralelo.
-* **🛡️ Interacción con el OS:** Llama directamente a la API de Windows (`SendARP` vía `syscall`) y usa aislamientos de hilos para evitar que el Kernel bloquee el programa.
-* **🚀 Binario Único (Zero-Config):** Al usar `go:embed`, el cliente no necesita instalar Node.js, NPM ni configurar un servidor web. El archivo `.exe` arranca el backend, levanta el frontend y sirve los WebSockets de forma autónoma.
-* **⏱️ Alta Precisión:** Configurado para responder a caídas de red en `200ms`, actualizando la interfaz a velocidades extremas.
+* **📉 Reducción Drástica del MTTR (Mean Time to Resolution):**
+  Al detectar fallas de conectividad en **milisegundos** (frente a los minutos que tardan herramientas tradicionales), los equipos de soporte y SysAdmins aíslan incidentes antes de que afecten a usuarios finales o clientes.
+
+* **🛡️ Detección Temprana de Shadow IT y Dispositivos No Autorizados:**
+  El motor de auto-descubrimiento en Capa 2 (ARP) mapea continuamente la red local. Si un colaborador o atacante conecta una laptop, router o dispositivo extraño a la LAN, NetPulse lo detecta e integra al panel al instante.
+
+* **🏪 Continuidad Operativa en Sucursales y Puntos de Venta (POS):**
+  En retail, bancos y franquicias con decenas de sedes remotas, asegura que impresoras térmicas, pasarelas de pago (datafonos) y terminales críticas permanezcan en línea sin necesidad de despliegues complejos ni técnicos *in-situ*.
+
+* **💰 Cero Costo de Licenciamiento y Huella Ultraligera (High ROI):**
+  Sustituye soluciones corporativas pesadas (SolarWinds, PRTG, Cisco Works) que demandan servidores dedicados y costosas suscripciones anuales. NetPulse corre como un único binario nativo que consume **menos de 25 MB de memoria RAM**.
+
+* **🖥️ Monitoreo Proactivo para Salas de Control (NOC / SOC):**
+  Su interfaz en tiempo real optimizada con WebSockets está pensada para pantallas de monitoreo 24/7, ofreciendo visibilidad instantánea sin generar congestión en el ancho de banda interno de la empresa.
 
 ---
 
